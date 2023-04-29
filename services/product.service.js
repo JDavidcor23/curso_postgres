@@ -1,9 +1,10 @@
-const { faker } = require('@faker-js/faker');
+const faker = require('faker');
 const boom = require('@hapi/boom');
 
-class ProductsService {
+const sequelize = require('../libs/sequelize');
 
-  constructor(){
+class ProductsService {
+  constructor() {
     this.products = [];
     this.generate();
   }
@@ -24,18 +25,22 @@ class ProductsService {
   async create(data) {
     const newProduct = {
       id: faker.datatype.uuid(),
-      ...data
-    }
+      ...data,
+    };
     this.products.push(newProduct);
     return newProduct;
   }
 
-  find() {
-    return this.products;
+  async find() {
+    const query = 'SELECT * FROM tasks';
+    // sequelize ya maneja los errores por nosotros
+    // sequelize entrega un array con dos elementos, el primero es el resultado de la consulta y el segundo es la metadata de la consulta
+    const [data, metadata] = await sequelize.query(query);
+    return { data, metadata };
   }
 
   async findOne(id) {
-    const product = this.products.find(item => item.id === id);
+    const product = this.products.find((item) => item.id === id);
     if (!product) {
       throw boom.notFound('product not found');
     }
@@ -46,27 +51,26 @@ class ProductsService {
   }
 
   async update(id, changes) {
-    const index = this.products.findIndex(item => item.id === id);
+    const index = this.products.findIndex((item) => item.id === id);
     if (index === -1) {
       throw boom.notFound('product not found');
     }
     const product = this.products[index];
     this.products[index] = {
       ...product,
-      ...changes
+      ...changes,
     };
     return this.products[index];
   }
 
   async delete(id) {
-    const index = this.products.findIndex(item => item.id === id);
+    const index = this.products.findIndex((item) => item.id === id);
     if (index === -1) {
       throw boom.notFound('product not found');
     }
     this.products.splice(index, 1);
     return { id };
   }
-
 }
 
 module.exports = ProductsService;
